@@ -7,6 +7,6 @@ set -x
 mkdir -p data/
 cd data/
 URL=http://mattmahoney.net/dc/text8.zip
-wget $URL
+curl -O $URL
 unzip $(basename $URL)
 rm text8.zip
