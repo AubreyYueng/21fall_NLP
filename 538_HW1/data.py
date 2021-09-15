@@ -76,10 +76,14 @@ class Dataset:
         stride = 1 
 
         ### TODO(students): start
+        # TODO 1. What if data is iterated to an end?
+        #      2. Is 'label' the loss?
+        #      3. Should 'data_index' refers to the start of window, or the index of center word?
+        #      4. Update stride.
         center_array = []
         context_array = []
-        sample_id = 0
-        while self.data_index + self.skip_window * 2 < len(data):
+        cur_size = 0
+        while self.data_index + self.skip_window * 2 < len(self.data):
             # draw samples inside a window
             center_in_win = []
             context_in_win = []
@@ -94,13 +98,13 @@ class Dataset:
 
             self.data_index += 1
 
-            n = min(self.batch_size - sample_id , self.num_skips)
+            n = min(self.batch_size - cur_size , self.num_skips)
             if n == 0:
                 break
             for i in range(n):
                 center_array.append(center_in_win[i])
-                context_array.append([context_in_win[i]])
-                sample_id += 1
+                context_array.append(context_in_win[i])
+                cur_size += 1
 
         if len(center_array) > 0:
             center_word = np.array(center_array, dtype=np.int32)
