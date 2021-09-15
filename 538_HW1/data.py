@@ -78,7 +78,7 @@ class Dataset:
         ### TODO(students): start
         center_array = []
         context_array = []
-        batch_id = 0
+        sample_id = 0
         while self.data_index + self.skip_window * 2 < len(data):
             # draw samples inside a window
             center_in_win = []
@@ -94,16 +94,19 @@ class Dataset:
 
             self.data_index += 1
 
-            n = min(self.batch_size - batch_id , self.num_skips)
+            n = min(self.batch_size - sample_id , self.num_skips)
             if n == 0:
                 break
             for i in range(n):
                 center_array.append(center_in_win[i])
                 context_array.append([context_in_win[i]])
+                sample_id += 1
+
         if len(center_array) > 0:
             center_word = np.array(center_array, dtype=np.int32)
             context_word = np.array(context_array, dtype=np.int32)
             print(f'data_index: {self.data_index}, ceter shape: {center_word.shape}, context shape: {context_word.shape}')
+
         ### TODO(students): end
 
         return torch.LongTensor(center_word), torch.LongTensor(context_word)
