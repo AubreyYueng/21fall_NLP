@@ -100,9 +100,10 @@ class Dataset:
             for i in range(n):
                 center_array.append(center_in_win[i])
                 context_array.append([context_in_win[i]])
-        center_word = np.array(center_array, dtype=np.int32)
-        context_word = np.array(context_array, dtype=np.int32)
-        print(f'data_index: {self.data_index}, ceter shape: {center_word.shape}, context shape: {context_word.shape}')
+        if len(center_array) > 0:
+            center_word = np.array(center_array, dtype=np.int32)
+            context_word = np.array(context_array, dtype=np.int32)
+            print(f'data_index: {self.data_index}, ceter shape: {center_word.shape}, context shape: {context_word.shape}')
         ### TODO(students): end
 
         return torch.LongTensor(center_word), torch.LongTensor(context_word)
