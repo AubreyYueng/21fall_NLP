@@ -69,9 +69,9 @@ And batch_size = 8, window_size = 3
 
 "[The quick brown] fox jumps over the lazy dog"
 
-Context word would be 'quick' and predicting words are 'The' and 'brown'.
+**Center** word would be 'quick' and **context** words are 'The' and 'brown'.
 This will generate training examples:
-      context(x), predicted_word(y)
+      center(x), context(y)
         (quick    ,       The)
         (quick    ,     brown)
 

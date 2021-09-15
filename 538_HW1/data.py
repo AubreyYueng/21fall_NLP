@@ -76,7 +76,33 @@ class Dataset:
         stride = 1 
 
         ### TODO(students): start
+        center_array = []
+        context_array = []
+        batch_id = 0
+        while self.data_index + self.skip_window * 2 < len(data):
+            # draw samples inside a window
+            center_in_win = []
+            context_in_win = []
+            w_c = self.data[self.data_index + self.skip_window]
 
+            i = 0
+            while i < self.num_skips:
+                if i != self.skip_window:
+                    center_in_win.append(w_c)
+                    context_in_win.append(self.data_index + i)
+                i += 1
+
+            self.data_index += 1
+
+            n = min(self.batch_size - batch_id , self.num_skips)
+            if n == 0:
+                break
+            for i in range(n):
+                center_array.append(center_in_win[i])
+                context_array.append([context_in_win[i]])
+        center_word = np.array(center_array, dtype=np.int32)
+        context_word = np.array(context_array, dtype=np.int32)
+        print(f'data_index: {self.data_index}, ceter shape: {center_word.shape}, context shape: {context_word.shape}')
         ### TODO(students): end
 
         return torch.LongTensor(center_word), torch.LongTensor(context_word)
