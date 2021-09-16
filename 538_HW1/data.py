@@ -83,10 +83,15 @@ class Dataset:
         if self.data_index < self.skip_window:
             self.data_index = self.skip_window      # make data_index the index of center word
         while self.data_index+self.skip_window < len(self.data):
+            self.data_index += 1
+
+            w_c = self.data[self.data_index]    # center word
+            if w_c == 0:    # center word of 'UNK' is meaningless
+                continue
+
             # Draw samples of a window
             center_in_win = []
             context_in_win = []
-            w_c = self.data[self.data_index]    # center word
             cur_id = max(0, self.data_index - self.skip_window)     # start of window
             samples_in_win = 0   # number of samples drawn in current window
             while samples_in_win < self.num_skips:
