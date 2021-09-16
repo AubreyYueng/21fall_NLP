@@ -76,35 +76,34 @@ class Dataset:
         stride = 1 
 
         ### TODO(students): start
-        # TODO 1. What if data is iterated to an end?
-        #      2. Is 'label' the loss?
-        #      3. Should 'data_index' refers to the start of window, or the index of center word?
-        #      4. Update stride.
+
         center_array = []
         context_array = []
-        cur_size = 0
-        while self.data_index + self.skip_window * 2 < len(self.data):
-            # draw samples inside a window
+        cur_batch_size = 0
+        while self.data_index < len(self.data):
+            # Draw samples inside a window
             center_in_win = []
             context_in_win = []
-            w_c = self.data[self.data_index + self.skip_window]
-
-            i = 0
+            w_c = self.data[self.data_index]    # center word
+            cur_id = max(0, self.data_index - self.skip_window)     # start of window
+            i = 0   # number of samples drawn in current window
             while i < self.num_skips:
-                if i != self.skip_window:
+                if cur_id >= min(self.data_index + self.skip_window, len(self.data)):
+                    break       # reach the end of window or data
+                if cur_id != self.data_index:   # not a center word
                     center_in_win.append(w_c)
-                    context_in_win.append(self.data_index + i)
-                i += 1
+                    context_in_win.append(self.data[cur_id])
+                    i += 1      # increase number of samples in current window
+                cur_id += 1
 
-            self.data_index += 1
-
-            n = min(self.batch_size - cur_size , self.num_skips)
-            if n == 0:
+            # Add samples to batch
+            n = min(self.batch_size - cur_batch_size , len(context_in_win))
+            if n == 0:      # have reached batch_size
                 break
             for i in range(n):
                 center_array.append(center_in_win[i])
                 context_array.append(context_in_win[i])
-                cur_size += 1
+                cur_batch_size += 1
 
         if len(center_array) > 0:
             center_word = np.array(center_array, dtype=np.int32)
