@@ -80,24 +80,26 @@ class Dataset:
         center_array = []
         context_array = []
         cur_batch_size = 0
-        while self.data_index < len(self.data):
-            # Draw samples inside a window
+        if self.data_index < self.skip_window:
+            self.data_index = self.skip_window      # make data_index the index of center word
+        while self.data_index+self.skip_window < len(self.data):
+            # Draw samples of a window
             center_in_win = []
             context_in_win = []
             w_c = self.data[self.data_index]    # center word
             cur_id = max(0, self.data_index - self.skip_window)     # start of window
-            i = 0   # number of samples drawn in current window
-            while i < self.num_skips:
+            samples_in_win = 0   # number of samples drawn in current window
+            while samples_in_win < self.num_skips:
                 if cur_id >= min(self.data_index + self.skip_window, len(self.data)):
-                    break       # reach the end of window or data
+                    break                       # reach the end of window or data
                 if cur_id != self.data_index:   # not a center word
                     center_in_win.append(w_c)
                     context_in_win.append(self.data[cur_id])
-                    i += 1      # increase number of samples in current window
+                    samples_in_win += 1         # increase number of samples in current window
                 cur_id += 1
 
-            # Add samples to batch
-            n = min(self.batch_size - cur_batch_size , len(context_in_win))
+            # Add drawn samples to batch
+            n = min(self.batch_size - cur_batch_size , len(context_in_win))     # how many more samples can be add
             if n == 0:      # have reached batch_size
                 break
             for i in range(n):
