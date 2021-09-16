@@ -76,14 +76,13 @@ class Dataset:
         stride = 1 
 
         ### TODO(students): start
-
         center_array = []
         context_array = []
         cur_batch_size = 0
         if self.data_index < self.skip_window:
-            self.data_index = self.skip_window      # make data_index the index of center word
+            self.data_index = self.skip_window      # make data_index the index of current center word
         while self.data_index+self.skip_window < len(self.data):
-            self.data_index += 1
+            self.data_index += 1                    # update data_index
 
             w_c = self.data[self.data_index]    # center word
             if w_c == 0:    # center word of 'UNK' is meaningless
