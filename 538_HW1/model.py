@@ -38,7 +38,9 @@ class WordVec(nn.Module):
     
     def negative_log_likelihood_loss(self, center_word, context_word):
         ### TODO(students): start
-
+        mul = center_word.mul(context_word)                     # u_o^T v_c
+        log_sum_exp = torch.log(torch.exp(mul).sum())           # log \sum{ exp(u_o^T v_c) }
+        loss = torch.sum(log_sum_exp.subtract(mul))             # \sum {log_sum_exp - u_o^T v_c}
         ### TODO(students): end
 
         return loss
