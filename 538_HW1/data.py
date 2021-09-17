@@ -85,8 +85,6 @@ class Dataset:
             self.data_index += 1                    # update data_index
 
             w_c = self.data[self.data_index]    # center word
-            if w_c == 0:    # center word of 'UNK' is meaningless
-                continue
 
             # Draw samples of a window
             center_in_win = []
