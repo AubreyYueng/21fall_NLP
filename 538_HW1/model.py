@@ -38,7 +38,6 @@ class WordVec(nn.Module):
     
     def negative_log_likelihood_loss(self, center_word, context_word):
         ### TODO(students): start
-        # TODO: Do we need to exclude 'UNK'
         mul = center_word.mul(context_word)                     # u_o^T v_c
         log_sum_exp = torch.log(torch.exp(mul).sum())           # log \sum{ exp(u_o^T v_c) }
         loss = torch.sum(log_sum_exp.subtract(mul))             # \sum {log_sum_exp - u_o^T v_c}
@@ -48,20 +47,19 @@ class WordVec(nn.Module):
     
     def negative_sampling(self, center_word, context_word):
         ### TODO(students): start
-        corpus_indices = torch.nonzero(context_word > 0)    # indices of corpus word
-        unk_indices = torch.nonzero(context_word == 0)      # indices of negative word
+        corpus_indices = torch.nonzero(context_word > 0)  # indices of corpus word
+        unk_indices = torch.nonzero(context_word == 0)  # indices of negative word
 
         corpus_u, corpus_v = center_word[corpus_indices], context_word[corpus_indices]
-        unk_x, unk_y = center_word[unk_indices], context_word[unk_indices]
+        unk_u, unk_v = center_word[unk_indices], context_word[unk_indices]
 
-        unk_exp = torch.exp(unk_x.mul(unk_y))
-        unk_prob = unk_exp.divide(unk_exp.sum())            # Pr(unk words) = exp(unk)/\sum{exp(unk)}
-        unk_neg = unk_prob.subtract(torch.tensor(1))        # -(1-Pr(unk words))
+        exp_corpus = torch.exp(torch.neg(corpus_u.mul(corpus_v)))   # exp(-u_o^T v_c) of corpus data
+        exp_unk = torch.exp(unk_u.mul(unk_v))                       # exp(u_o^T v_c) of unk data
 
-        unk_loss = torch.log(unk_neg).sum()                 # \sum{ log(Pr(unk)-1) }
-        corpus_loss = self.negative_log_likelihood_loss(corpus_u, corpus_v)
-        loss = corpus_loss + unk_loss
+        ll_corpus = torch.log(torch.tensor(1).divide(torch.tensor(1).add(exp_corpus))).sum()    # sigmoid sum of corpus
+        ll_unk = torch.log(torch.tensor(1).divide(torch.tensor(1).add(exp_unk))).sum()      # sigmoid sum of unk
 
+        loss = ll_corpus + ll_unk
         ### TODO(students): end
 
         return loss
