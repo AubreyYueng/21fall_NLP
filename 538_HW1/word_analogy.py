@@ -74,7 +74,18 @@ def evaluate_pairs(candidate_embs, test_embs):
     worst_pairs = []
 
     ### TODO(students): start
+    for i, line in enumerate(candidate):
+        # normalized diff vectors
+        test_diffs = [vec / np.linalg.norm(vec) for vec in [(x-y) for [x, y] in test_embs[i]]]
+        candidate_diffs = [vec / np.linalg.norm(vec) for vec in [(x-y) for [x, y] in candidate_embs[i]]]
 
+        word_similarity = []    # candidate word pair -> sum of cos
+        for j, cur in enumerate(line):
+            can = candidate_diffs[j]
+            word_similarity.append([cur, sum([(can * t).sum() for t in test_diffs])])
+        word_similarity.sort(key=lambda x: x[1])    # sort by cos
+        best_pairs.append(word_similarity[-1][0])   # best: largest cos
+        worst_pairs.append(word_similarity[0][0])
     ### TODO(students): end
     
     return best_pairs, worst_pairs
