@@ -79,22 +79,21 @@ class Dataset:
         center_array = []
         context_array = []
         cur_batch_size = 0
-        if self.data_index < self.skip_window:
-            self.data_index = self.skip_window      # make data_index the index of current center word
-        while self.data_index+self.skip_window < len(self.data):
-            self.data_index += 1                    # update data_index
+        id = self.skip_window      # make it the index of current center word
+        while id+self.skip_window < len(self.data):
+            id += 1                    # update data_index
 
-            w_c = self.data[self.data_index]    # center word
+            w_c = self.data[id]    # center word
 
             # Draw samples of a window
             center_in_win = []
             context_in_win = []
-            cur_id = max(0, self.data_index - self.skip_window)     # start of window
+            cur_id = max(0, id - self.skip_window)     # start of window
             samples_in_win = 0   # number of samples drawn in current window
             while samples_in_win < self.num_skips:
-                if cur_id >= min(self.data_index + self.skip_window, len(self.data)):
+                if cur_id >= min(id + self.skip_window, len(self.data)):
                     break                       # reach the end of window or data
-                if cur_id != self.data_index:   # not a center word
+                if cur_id != id:   # not a center word
                     center_in_win.append(w_c)
                     context_in_win.append(self.data[cur_id])
                     samples_in_win += 1         # increase number of samples in current window
@@ -112,7 +111,7 @@ class Dataset:
         if len(center_array) > 0:
             center_word = np.array(center_array, dtype=np.int32)
             context_word = np.array(context_array, dtype=np.int32)
-            print(f'data_index: {self.data_index}, ceter shape: {center_word.shape}, context shape: {context_word.shape}')
+            print(f'center index: {id}, center shape: {center_word.shape}, context shape: {context_word.shape}')
 
         ### TODO(students): end
 
