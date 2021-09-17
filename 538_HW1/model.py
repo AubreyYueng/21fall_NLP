@@ -38,7 +38,7 @@ class WordVec(nn.Module):
     
     def negative_log_likelihood_loss(self, center_word, context_word):
         ### TODO(students): start
-        mul = center_word.mul(context_word)                     # u_o^T v_c
+        mul = center_word.mul(context_word).sum(-1)             # u_o^T v_c
         log_sum_exp = torch.log(torch.exp(mul).sum())           # log \sum{ exp(u_o^T v_c) }
         loss = torch.sum(log_sum_exp.subtract(mul))             # \sum {log_sum_exp - u_o^T v_c}
         ### TODO(students): end
@@ -53,8 +53,8 @@ class WordVec(nn.Module):
         corpus_u, corpus_v = center_word[corpus_indices], context_word[corpus_indices]
         unk_u, unk_v = center_word[unk_indices], context_word[unk_indices]
 
-        exp_corpus = torch.exp(torch.neg(corpus_u.mul(corpus_v)))   # exp(-u_o^T v_c) of corpus data
-        exp_unk = torch.exp(unk_u.mul(unk_v))                       # exp(u_o^T v_c) of unk data
+        exp_corpus = torch.exp(torch.neg(corpus_u.mul(corpus_v).sum(-1)))   # exp(-u_o^T v_c) of corpus data
+        exp_unk = torch.exp(unk_u.mul(unk_v).sum(-1))                       # exp(u_o^T v_c) of unk data
 
         ll_corpus = torch.log(torch.tensor(1).divide(torch.tensor(1).add(exp_corpus))).sum()    # sigmoid sum of corpus
         ll_unk = torch.log(torch.tensor(1).divide(torch.tensor(1).add(exp_unk))).sum()      # sigmoid sum of unk
