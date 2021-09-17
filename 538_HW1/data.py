@@ -104,8 +104,8 @@ class Dataset:
             if n == 0:      # have reached batch_size
                 break
             for i in range(n):
-                center_array.append(center_in_win[i])
-                context_array.append(context_in_win[i])
+                center_array.append([center_in_win[i]])
+                context_array.append([context_in_win[i]])
                 cur_batch_size += 1
 
         if len(center_array) > 0:
