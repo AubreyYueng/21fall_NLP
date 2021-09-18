@@ -59,12 +59,12 @@ class WordVec(nn.Module):
                 word_freq[x] += 1
             else:
                 word_freq[x] = 0
-        v_sum = 0
+        freq_sum = 0
         for (k, v) in word_freq.items():
-            word_freq[k] = v ** (3 / 4)  # adjust frequencies according to the paper
-            v_sum += word_freq[k]
-        for (k, v) in word_freq.items():  # calculate frequencies
-            word_freq[k] = v / v_sum
+            word_freq[k] = v ** (3 / 4)  # adjust count according to the paper
+            freq_sum += word_freq[k]
+        for (k, v) in word_freq.items():  # calculate adjusted frequencies
+            word_freq[k] = v / freq_sum
 
         sample_size = len(center_word)
         center_idx = 0
