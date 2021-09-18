@@ -101,8 +101,8 @@ class Dataset:
             # Add drawn samples to batch
             n = min(self.batch_size - cur_batch_size , len(context_in_win))     # how many more samples can be add
             for i in range(n):
-                center_array.append([center_in_win[i]])
-                context_array.append([context_in_win[i]])
+                center_array.append(center_in_win[i])
+                context_array.append(context_in_win[i])
                 cur_batch_size += 1
 
             self.data_index += 1                # move to next center word
