@@ -49,6 +49,8 @@ class WordVec(nn.Module):
     
     def negative_sampling(self, center_word, context_word):
         ### TODO(students): start
+
+
         positive_sample = []        # construct positive samples for negative sample checking
         center_arr = center_word.numpy()
         context_arr = context_word.numpy()
