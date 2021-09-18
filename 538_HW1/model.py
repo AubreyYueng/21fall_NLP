@@ -38,7 +38,7 @@ class WordVec(nn.Module):
     
     def negative_log_likelihood_loss(self, center_word, context_word):
         ### TODO(students): start
-        mul = center_word.mul(context_word)                     # u_o^T v_c
+        mul = context_word.mul(center_word)                     # u_o^T v_c
         log_sum_exp = torch.log(torch.exp(mul).sum())           # log \sum{ exp(u_o^T v_c) }
         loss = torch.sum(log_sum_exp.subtract(mul))             # \sum {log_sum_exp - u_o^T v_c}
         ### TODO(students): end
@@ -47,19 +47,52 @@ class WordVec(nn.Module):
     
     def negative_sampling(self, center_word, context_word):
         ### TODO(students): start
-        corpus_indices = torch.nonzero(context_word > 0)  # indices of corpus word
-        unk_indices = torch.nonzero(context_word == 0)  # indices of negative word
+        positive_sample = []        # construct positive samples for negative sample checking
+        center_arr = center_word.numpy()
+        context_arr = context_word.numpy()
+        for i, x in enumerate(center_arr):
+            positive_sample.append((x, context_arr[i]))
 
-        corpus_u, corpus_v = center_word[corpus_indices], context_word[corpus_indices]
-        unk_u, unk_v = center_word[unk_indices], context_word[unk_indices]
+        word_freq = {}
+        for x in context_word:  # counting words
+            if x in word_freq:
+                word_freq[x] += 1
+            else:
+                word_freq[x] = 0
+        v_sum = 0
+        for (k, v) in word_freq.items():
+            word_freq[k] = v ** (3 / 4)  # adjust frequencies according to the paper
+            v_sum += word_freq[k]
+        for (k, v) in word_freq.items():  # calculate frequencies
+            word_freq[k] = v / v_sum
 
-        exp_corpus = torch.exp(torch.neg(corpus_u.mul(corpus_v)))   # exp(-u_o^T v_c) of corpus data
-        exp_unk = torch.exp(unk_u.mul(unk_v))                       # exp(u_o^T v_c) of unk data
+        sample_size = len(center_word)
+        neg_sample_cnt = 0
+        neg_center = []
+        neg_context = []
+        while neg_sample_cnt < sample_size:
+            random_center = np.random.choice(list(word_freq.keys()), p=list(word_freq.values()))
+            random_context = np.random.choice(list(word_freq.keys()), p=list(word_freq.values()))
+            if (random_center, random_context) in positive_sample:
+                continue
+            neg_center.append(random_center)
+            neg_context.append(random_context)
+            neg_sample_cnt += 1
 
-        ll_corpus = torch.log(torch.tensor(1).divide(torch.tensor(1).add(exp_corpus))).sum()    # sigmoid sum of corpus
-        ll_unk = torch.log(torch.tensor(1).divide(torch.tensor(1).add(exp_unk))).sum()      # sigmoid sum of unk
+        neg_u = torch.LongTensor(np.array(neg_context, dtype=np.int32))
+        neg_v = torch.LongTensor(np.array(neg_center, dtype=np.int32))
 
-        loss = ll_corpus + ll_unk
+        exp_pos = torch.exp(torch.neg(context_word.mul(center_word)))   # exp(-u_o^T v_c) of positive data
+        exp_neg = torch.exp(neg_u.mul(neg_v))                           # exp(u_o^T v_c) of neg data
+
+        denominator_pos = torch.tensor(1).add(exp_pos)      # 1 + exp(-u_o^T v_c) of positive data
+        denominator_neg = torch.tensor(1).add(exp_neg)      # 1 + exp(u_o^T v_c) of neg data
+
+        # sum of log sigmoid
+        ll_pos = torch.log(torch.tensor(1).divide(denominator_pos)).sum()
+        ll_neg = torch.log(torch.tensor(1).divide(denominator_neg)).sum()
+
+        loss = -(ll_pos + ll_neg)
         ### TODO(students): end
 
         return loss
