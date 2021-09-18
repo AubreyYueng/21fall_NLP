@@ -67,20 +67,18 @@ class WordVec(nn.Module):
             word_freq[k] = v / v_sum
 
         sample_size = len(center_word)
-        neg_sample_cnt = 0
-        neg_center = []
+        center_idx = 0
         neg_context = []
-        while neg_sample_cnt < sample_size:
-            random_center = np.random.choice(list(word_freq.keys()), p=list(word_freq.values()))
+        while center_idx < sample_size:
+            center = center_arr[center_idx]     # use the same center word
             random_context = np.random.choice(list(word_freq.keys()), p=list(word_freq.values()))
-            if (random_center, random_context) in positive_sample:
+            if (center, random_context) in positive_sample:
                 continue
-            neg_center.append(random_center)
             neg_context.append(random_context)
-            neg_sample_cnt += 1
+            center_idx += 1
 
         neg_u = torch.LongTensor(np.array(neg_context, dtype=np.int32))
-        neg_v = torch.LongTensor(np.array(neg_center, dtype=np.int32))
+        neg_v = torch.LongTensor(np.array(center_arr, dtype=np.int32))
 
         exp_pos = torch.exp(torch.neg(context_word.mul(center_word)))   # exp(-u_o^T v_c) of positive data
         exp_neg = torch.exp(neg_u.mul(neg_v))                           # exp(u_o^T v_c) of neg data
