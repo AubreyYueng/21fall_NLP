@@ -80,8 +80,9 @@ class WordVec(nn.Module):
             neg_context_arr.append(random_context)
             cur_size += 1
 
-        neg_center = torch.LongTensor(np.array(center_arr, dtype=np.int32))
-        neg_context = torch.LongTensor(np.array(neg_context_arr, dtype=np.int32))
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        neg_center = torch.LongTensor(np.array(center_arr, dtype=np.int32)).to(device)
+        neg_context = torch.LongTensor(np.array(neg_context_arr, dtype=np.int32)).to(device)
         neg_center_embeds = self.center_embeddings(neg_center)
         neg_context_embeds = self.context_embeddings(neg_context)
         neg_mul = neg_context_embeds.mul(neg_center_embeds).sum(-1)
