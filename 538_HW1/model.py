@@ -53,7 +53,7 @@ class WordVec(nn.Module):
         center_embeds = self.center_embeddings(center_word)
         context_embeds = self.context_embeddings(context_word)
         mul = context_embeds.mul(center_embeds).sum(-1)
-        positive_los = sigmoid(mul)
+        positive_los = torch.log(sigmoid(mul)).sum()
 
         positive_sample = []  # construct positive samples for negative sample checking
         center_arr = center_word.numpy()
@@ -86,7 +86,7 @@ class WordVec(nn.Module):
         neg_center_embeds = self.center_embeddings(neg_center)
         neg_context_embeds = self.context_embeddings(neg_context)
         neg_mul = neg_context_embeds.mul(neg_center_embeds).sum(-1)
-        neg_los = sigmoid(neg_mul)
+        neg_los = torch.log(sigmoid(neg_mul)).sum()
 
         loss = -(positive_los + neg_los)
         ### TODO(students): end
