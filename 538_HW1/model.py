@@ -53,32 +53,9 @@ class WordVec(nn.Module):
         ### TODO(students): start
         sample_size = len(center_word)
         weights = torch.tensor(self.counts, dtype=torch.float) ** 0.75
-        neg_center= torch.multinomial(weights, sample_size, replacement = True)
-        neg_context = torch.multinomial(weights, sample_size, replacement=True)
-
-        positive_sample = []                # construct positive samples for negative sample checking
-        center_arr = center_word.numpy()
-        context_arr = context_word.numpy()
-        for i, x in enumerate(center_arr):
-            positive_sample.append((x, context_arr[i]))
-
-        cur_size = 0
-        neg_center_arr = []
-        neg_context_arr = []
-        while cur_size < sample_size:
-            neg_center = neg_center[cur_size]                   # negative center word
-            neg_context = neg_context[cur_size]                 # negative context word
-            if (neg_center, neg_context) in positive_sample:    # chosen sample exists, random choose another sample
-                neg_center[cur_size] = torch.multinomial(weights, 1, replacement=True)
-                neg_context[cur_size] = torch.multinomial(weights, 1, replacement=True)
-                continue
-            neg_center_arr.append(neg_center)
-            neg_context_arr.append(neg_context)
-            cur_size += 1
-
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        neg_center = torch.LongTensor(np.array(center_arr, dtype=np.int32)).to(device)
-        neg_context = torch.LongTensor(np.array(neg_context_arr, dtype=np.int32)).to(device)
+        neg_center = torch.multinomial(weights, sample_size, replacement = True).to(device)
+        neg_context = torch.multinomial(weights, sample_size, replacement=True).to(device)
 
         # calculate loss for negative
         neg_center_embeds = self.center_embeddings(neg_center)
@@ -89,10 +66,10 @@ class WordVec(nn.Module):
         # calculate loss for positive
         center_embeds = self.center_embeddings(center_word)
         context_embeds = self.context_embeddings(context_word)
-        mul = torch.sum(context_embeds * center_embeds, dim = -1)
+        mul = torch.sum(context_embeds * center_embeds, dim=-1)
         pos_loss = torch.log(sigmoid(mul))
 
-        loss = -(pos_loss + neg_loss).mean()
+        loss = -pos_loss.mean() - neg_loss.mean()
         ### TODO(students): end
 
         return loss
