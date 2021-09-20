@@ -9,21 +9,20 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-sigmoid = lambda x: 1 / (1 + torch.exp(-x))
-
+sigmoid = lambda x: 1/(1 + torch.exp(-x))
 
 class WordVec(nn.Module):
     def __init__(self, V, embedding_dim, loss_func, counts):
         super(WordVec, self).__init__()
         self.center_embeddings = nn.Embedding(num_embeddings=V, embedding_dim=embedding_dim)
-        self.center_embeddings.weight.data.normal_(mean=0, std=1 / math.sqrt(embedding_dim))
-        self.center_embeddings.weight.data[self.center_embeddings.weight.data < -1] = -1
-        self.center_embeddings.weight.data[self.center_embeddings.weight.data > 1] = 1
+        self.center_embeddings.weight.data.normal_(mean=0, std=1/math.sqrt(embedding_dim))
+        self.center_embeddings.weight.data[self.center_embeddings.weight.data<-1] = -1
+        self.center_embeddings.weight.data[self.center_embeddings.weight.data>1] = 1
 
         self.context_embeddings = nn.Embedding(num_embeddings=V, embedding_dim=embedding_dim)
-        self.context_embeddings.weight.data.normal_(mean=0, std=1 / math.sqrt(embedding_dim))
-        self.context_embeddings.weight.data[self.context_embeddings.weight.data < -1] = -1 + 1e-10
-        self.context_embeddings.weight.data[self.context_embeddings.weight.data > 1] = 1 - 1e-10
+        self.context_embeddings.weight.data.normal_(mean=0, std=1/math.sqrt(embedding_dim))
+        self.context_embeddings.weight.data[self.context_embeddings.weight.data<-1] = -1 + 1e-10
+        self.context_embeddings.weight.data[self.context_embeddings.weight.data>1] = 1 - 1e-10
 
         self.loss_func = loss_func
         self.counts = counts
@@ -35,23 +34,17 @@ class WordVec(nn.Module):
         elif self.loss_func == "neg":
             return self.negative_sampling(center_word, context_word)
         else:
-            raise Exception("No implementation found for %s" % (self.loss_func))
+            raise Exception("No implementation found for %s"%(self.loss_func))
 
     def negative_log_likelihood_loss(self, center_word, context_word):
         ### TODO(students): start
-        # print(f'center[:5]: {center_word[:5]}')
-        # print(f'context[:5]: {context_word[:5]}')
         center_embeds = self.center_embeddings(center_word)
         context_embeds = self.context_embeddings(context_word)
-        # print(f'center_embeds.shape: {center_embeds.shape}, context_embeds.shape: {context_embeds.shape}')
-        mul = torch.sum(context_embeds * center_embeds, dim=1)
-        exp = torch.exp(mul)
-        sum_exp = torch.sum(exp)
-        loss = -torch.log(exp.divide(sum_exp)).mean()
-        # print(f'mul: {mul}')
-        # print(f'exp: {exp}')
-        # print(f'sum_exp: {sum_exp}')
-        # print(f'loss: {loss}')
+        mul_1 = torch.sum(context_embeds * center_embeds, dim=1)            # u_{c-m+j}^T v_c
+        mul_2 = center_embeds.mm(torch.transpose(context_embeds, 0, 1))     # u_k^T v_c
+        exp = torch.exp(mul_1)                                  # exp(u_{c-m+j}^T v_c)
+        sum_exp = torch.exp(mul_2).sum()                        # \sum exp(u_k^T v_c)
+        loss = -(torch.log(exp.divide(sum_exp))).mean()         # -sum(log exp/sum_exp)
         ### TODO(students): end
 
         return loss
