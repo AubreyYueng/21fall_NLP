@@ -481,26 +481,38 @@
         "X_key": "Science words",
         "Y_key": "Arts words"
     },
-    /* TODO(students): start
-
-    "custom_task": {
-        "A_key": "A_val",
-        "B_key": "B_val",
-        "X_key": "X_val",
-        "Y_key": "Y_val",
-        "A_val": [
-          # list of words for attribute A
+     "custom_task": {
+        "A_key": "Asian Name",
+        "B_key": "American Name",
+        "X_key": "Tech Jobs",
+        "Y_key": "Common Jobs",
+        "Asian Name": [
+            "chen",
+            "li",
+            "wong",
+            "lin",
+            "huang"
         ],
-        "B_val": [
-          # list of words for attribute B
+        "American Name": [
+            "smith",
+            "johnson",
+            "williams",
+            "brown",
+            "johns"
         ],
-        "X_val": [
-          # list of words for target X
+        "Tech Jobs": [
+            "software",
+            "engineer",
+            "scientist",
+            "computer",
+            "network"
         ],
-        "Y_val": [
-          # list of words for target Y
+        "Common Jobs": [
+            "lawyer",
+            "manager",
+            "finance",
+            "nurse",
+            "sale"
         ]
     }
-    
-    TODO(students): end*/
 }
