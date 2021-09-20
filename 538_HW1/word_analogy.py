@@ -82,7 +82,7 @@ def evaluate_pairs(candidate_embs, test_embs):
         word_similarity = []    # candidate word pair -> sum of cos
         for j, cur in enumerate(line):
             can = candidate_diffs[j]
-            word_similarity.append([cur, sum([(can * t).sum() for t in test_diffs])])
+            word_similarity.append([j, sum([(can * t).sum() for t in test_diffs])])
         word_similarity.sort(key=lambda x: x[1])    # sort by cos
         best_pairs.append(word_similarity[-1][0])   # best: largest cos
         worst_pairs.append(word_similarity[0][0])
