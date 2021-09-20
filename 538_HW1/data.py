@@ -112,8 +112,8 @@ class Dataset:
         if len(center_array) > 0:
             center_word = np.array(center_array, dtype=np.int32)
             context_word = np.array(context_array, dtype=np.int32)
-            print(f'center index: {self.data_index}, center shape: {center_word.shape}, '
-                  f'context shape: {context_word.shape}, generated batch size: {len(center_word)}')
+            # print(f'center index: {self.data_index}, center shape: {center_word.shape}, '
+            #       f'context shape: {context_word.shape}, generated batch size: {len(center_word)}')
         ### TODO(students): end
 
         return torch.LongTensor(center_word), torch.LongTensor(context_word)
