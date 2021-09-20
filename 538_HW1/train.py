@@ -30,6 +30,8 @@ class Trainer:
             center_word, context_word = dataset.generate_batch()
             loss = self.training_step(center_word.to(device), context_word.to(device))
             loss.backward()
+            # for name, para in self.model.named_parameters():
+            #     print(f'name: {name}, {para.requires_grad}, grad_value: {para.grad}')
             optim.step()
             self.losses.append(loss.item())
             if curr_step: 
