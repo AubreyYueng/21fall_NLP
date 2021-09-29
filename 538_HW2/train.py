@@ -66,6 +66,9 @@ def train(model: nn.Module,
             logits = model(batch_input_tensors, training=True)["logits"]
             loss_value = cross_entropy_loss(logits, batch_labels)
             loss_value.backward()
+            # for name, param in model.named_parameters():
+            #     if param.requires_grad and param.grad is None:
+            #         print(name, param.data)
             optimizer.step()
             total_training_loss += loss_value
             batch_predictions = np.argmax(nn.Softmax(dim=1)(logits).detach().cpu().numpy(), axis=-1)
