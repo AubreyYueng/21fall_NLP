@@ -153,8 +153,9 @@ class GruSequenceToVector(SequenceToVector):
         # TODO(students): start
         self._device = device       # define local variables
         self._num_layers = num_layers
-        self._wh = nn.Linear(input_dim, 3 * input_dim)      # 3 hidden states related weights
-        self._wx = nn.Linear(input_dim, 3 * input_dim)      # 3 input states related weights
+        self._input_dim = input_dim
+        self._gru = nn.GRU(input_size=input_dim, hidden_size=input_dim, num_layers=num_layers, batch_first=True)
+        self._bn = nn.BatchNorm1d(input_dim)
         # TODO(students): end
 
     def forward(self,
@@ -162,27 +163,16 @@ class GruSequenceToVector(SequenceToVector):
              sequence_mask: torch.Tensor,
              training=False) -> torch.Tensor:
         # TODO(students): start
-        def gru_unit(x, h):     # a GRU unit
-            ha, hb, hc = self._wh(h).chunk(3, dim=1)
-            xa, xb, xc = self._wx(x).chunk(3, dim=1)
-            update_gate = torch.sigmoid(ha + xa)
-            reset_gate = torch.sigmoid(hb + xb)
-            candidate = torch.tanh(xc + reset_gate * hc)
-            return update_gate * h + (1 - update_gate) * candidate
-
-        layers_output = []
-        prev_input = vector_sequence[sequence_mask > 0]     # filter out padding tokens
-        for i in range(self._num_layers):
-            h_list = []
-            h = torch.zeros(self._input_dim, self._input_dim).to(self._device)  # init hidden state with zero
-            for x in prev_input:
-                h = gru_unit(x, h)
-                h_list.append(h)
-            layers_output.append(h_list[-1])
-            prev_input = h_list     # the newly computed h_list is used as the input of next layer
-
-        combined_vector = layers_output[-1]
-        layer_representations = torch.stack(layers_output, dim=-1)
+        seq_lengths, perm_idx = sequence_mask.sum(dim=1).sort(0, descending=True)
+        vector_sequence = vector_sequence[perm_idx]
+        packed_seq_batch = nn.utils.rnn.pack_padded_sequence(vector_sequence, lengths=seq_lengths, batch_first=True)
+        # print(f'batch_sizes: {packed_seq_batch.batch_sizes}')
+        out, hn = self._gru(packed_seq_batch)
+        # combined_vector = hn[-1]
+        combined_vector = self._bn(hn[-1])
+        # print(f'combined_vector.shape: {combined_vector.shape}')
+        layer_representations = hn.transpose(0, 1)
+        # print(f'layer_representations.shape: {layer_representations.shape}')
         # TODO(students): end
         return {"combined_vector": combined_vector,
                 "layer_representations": layer_representations}
