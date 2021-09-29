@@ -163,12 +163,12 @@ class GruSequenceToVector(SequenceToVector):
              sequence_mask: torch.Tensor,
              training=False) -> torch.Tensor:
         # TODO(students): start
-        seq_lengths, perm_idx = sequence_mask.sum(dim=1).sort(0, descending=True)
-        vector_sequence = vector_sequence[perm_idx]
-        packed_seq_batch = nn.utils.rnn.pack_padded_sequence(vector_sequence, lengths=seq_lengths, batch_first=True)
+        seq_lengths = sequence_mask.sum(dim=1)
+        packed_seq_batch = nn.utils.rnn.pack_padded_sequence(vector_sequence, lengths=seq_lengths, batch_first=True,
+                                                             enforce_sorted=False)
         out, hn = self._gru(packed_seq_batch)
-        combined_vector = hn[-1]
         # combined_vector = self._bn(hn[-1])
+        combined_vector = hn[-1]
         # print(f'combined_vector.shape: {combined_vector.shape}')
         layer_representations = hn.transpose(0, 1)
         # print(f'layer_representations.shape: {layer_representations.shape}')
