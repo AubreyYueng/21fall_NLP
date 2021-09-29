@@ -155,7 +155,7 @@ class GruSequenceToVector(SequenceToVector):
         self._num_layers = num_layers
         self._input_dim = input_dim
         self._gru = nn.GRU(input_size=input_dim, hidden_size=input_dim, num_layers=num_layers, batch_first=True)
-        self._bn = nn.BatchNorm1d(input_dim)
+        # self._bn = nn.BatchNorm1d(input_dim)
         # TODO(students): end
 
     def forward(self,
@@ -166,10 +166,9 @@ class GruSequenceToVector(SequenceToVector):
         seq_lengths, perm_idx = sequence_mask.sum(dim=1).sort(0, descending=True)
         vector_sequence = vector_sequence[perm_idx]
         packed_seq_batch = nn.utils.rnn.pack_padded_sequence(vector_sequence, lengths=seq_lengths, batch_first=True)
-        # print(f'batch_sizes: {packed_seq_batch.batch_sizes}')
         out, hn = self._gru(packed_seq_batch)
-        # combined_vector = hn[-1]
-        combined_vector = self._bn(hn[-1])
+        combined_vector = hn[-1]
+        # combined_vector = self._bn(hn[-1])
         # print(f'combined_vector.shape: {combined_vector.shape}')
         layer_representations = hn.transpose(0, 1)
         # print(f'layer_representations.shape: {layer_representations.shape}')
