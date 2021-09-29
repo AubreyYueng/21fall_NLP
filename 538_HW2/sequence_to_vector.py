@@ -83,7 +83,15 @@ class DanSequenceToVector(SequenceToVector):
     def __init__(self, input_dim: int, num_layers: int, dropout: float = 0.2, device = 'cpu'):
         super(DanSequenceToVector, self).__init__(input_dim)
         # TODO(students): start
-        
+        self._dropout = dropout     # define local variables
+        self._device = device
+        self._num_layers = num_layers
+
+        seq_models = nn.ModuleList()    # create a sequential model for (n-1) hidden layers
+        for i in range(num_layers-1):
+            seq_models.append(nn.Linear(input_dim, input_dim))  # linear transformation
+            seq_models.append(nn.ReLU())        # ReLu activation function
+        self._hidden_layers = seq_models
         # TODO(students): end
 
     def forward(self,
@@ -91,7 +99,36 @@ class DanSequenceToVector(SequenceToVector):
              sequence_mask: torch.Tensor,
              training=False) -> torch.Tensor:
         # TODO(students): start
-        
+        batch_size = len(vector_sequence)
+        final_layers = []
+        all_layers = []
+        for i in range(batch_size):
+            cur_batch = vector_sequence[i]
+            with torch.no_grad():
+                mask = torch.ones(len(cur_batch))
+                if training:        # dropout in training helps prevent overfitting
+                    mask = torch.bernoulli(mask * (1 - self._dropout))
+                    # print(f'number of samples chosen by bernoulli: {mask.sum()}')
+                mask *= sequence_mask[i]
+                input_seq = cur_batch[mask > 0]     # filter out padding tokens
+                # print(f'#number of vectors after masking: {len(input_seq)}')
+
+            batch_layers = []
+            layer = torch.mean(input_seq, dim=0)      # avg(vector_sequence)
+            # print(f'cur.shape: {layer.shape}')
+            for j in range(self._num_layers-1):       # hidden layers
+                # print(f'cur.shape: {layer.shape}')
+                layer = self._hidden_layers[j*2](layer)
+                layer = self._hidden_layers[j*2+1](layer)
+                batch_layers.append(layer)
+            final_layers.append(layer)
+            all_layers.append(torch.stack(batch_layers))
+
+        combined_vector = torch.stack(final_layers)
+        # print(f'combined_vector.shape: {combined_vector.shape}')
+        layer_representations = torch.stack(all_layers)
+        # print(f'layer_representations.shape: {layer_representations.shape}')
+
         # TODO(students): end
         return {"combined_vector": combined_vector,
                 "layer_representations": layer_representations}
@@ -114,7 +151,10 @@ class GruSequenceToVector(SequenceToVector):
     def __init__(self, input_dim: int, num_layers: int, device = 'cpu'):
         super(GruSequenceToVector, self).__init__(input_dim)
         # TODO(students): start
-        
+        self._device = device       # define local variables
+        self._num_layers = num_layers
+        self._wh = nn.Linear(input_dim, 3 * input_dim)      # 3 hidden states related weights
+        self._wx = nn.Linear(input_dim, 3 * input_dim)      # 3 input states related weights
         # TODO(students): end
 
     def forward(self,
@@ -122,7 +162,27 @@ class GruSequenceToVector(SequenceToVector):
              sequence_mask: torch.Tensor,
              training=False) -> torch.Tensor:
         # TODO(students): start
-        
+        def gru_unit(x, h):     # a GRU unit
+            ha, hb, hc = self._wh(h).chunk(3, dim=1)
+            xa, xb, xc = self._wx(x).chunk(3, dim=1)
+            update_gate = torch.sigmoid(ha + xa)
+            reset_gate = torch.sigmoid(hb + xb)
+            candidate = torch.tanh(xc + reset_gate * hc)
+            return update_gate * h + (1 - update_gate) * candidate
+
+        layers_output = []
+        prev_input = vector_sequence[sequence_mask > 0]     # filter out padding tokens
+        for i in range(self._num_layers):
+            h_list = []
+            h = torch.zeros(self._input_dim, self._input_dim).to(self._device)  # init hidden state with zero
+            for x in prev_input:
+                h = gru_unit(x, h)
+                h_list.append(h)
+            layers_output.append(h_list[-1])
+            prev_input = h_list     # the newly computed h_list is used as the input of next layer
+
+        combined_vector = layers_output[-1]
+        layer_representations = torch.stack(layers_output, dim=-1)
         # TODO(students): end
         return {"combined_vector": combined_vector,
                 "layer_representations": layer_representations}
