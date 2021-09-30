@@ -88,9 +88,10 @@ class DanSequenceToVector(SequenceToVector):
         self._num_layers = num_layers
 
         seq_models = nn.ModuleList()    # create a sequential model for (n-1) hidden layers
-        for i in range(num_layers-1):
+        for i in range(num_layers):
             seq_models.append(nn.Linear(input_dim, input_dim))  # linear transformation
             seq_models.append(nn.ReLU())        # ReLu activation function
+        seq_models.append(nn.Linear(input_dim, input_dim))      # linear transformation for the last layer
         self._hidden_layers = seq_models
         # TODO(students): end
 
@@ -109,14 +110,14 @@ class DanSequenceToVector(SequenceToVector):
                 if training:        # dropout in training helps prevent overfitting
                     mask = torch.bernoulli(mask * (1 - self._dropout))
                     # print(f'number of samples chosen by bernoulli: {mask.sum()}')
-                mask *= sequence_mask[i]
-                input_seq = cur_batch[mask > 0]     # filter out padding tokens
+                mask *= sequence_mask[i]        # filter out padding tokens
+                input_seq = cur_batch[mask > 0]
                 # print(f'#number of vectors after masking: {len(input_seq)}')
 
             batch_layers = []
             layer = torch.mean(input_seq, dim=0)      # avg(vector_sequence)
             # print(f'cur.shape: {layer.shape}')
-            for j in range(self._num_layers-1):       # hidden layers
+            for j in range(self._num_layers):       # hidden layers
                 # print(f'cur.shape: {layer.shape}')
                 layer = self._hidden_layers[j*2](layer)
                 layer = self._hidden_layers[j*2+1](layer)
