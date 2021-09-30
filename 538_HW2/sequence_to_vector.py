@@ -91,7 +91,6 @@ class DanSequenceToVector(SequenceToVector):
         for i in range(num_layers):
             seq_models.append(nn.Linear(input_dim, input_dim))  # linear transformation
             seq_models.append(nn.ReLU())        # ReLu activation function
-        seq_models.append(nn.Linear(input_dim, input_dim))      # linear transformation for the last layer
         self._hidden_layers = seq_models
         # TODO(students): end
 
