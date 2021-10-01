@@ -64,7 +64,7 @@ class ProbingClassifier(nn.Module):
             only be applied during training.
         """
         # TODO(students): start
-        layer = self._pretrained_model(inputs, training)["layer_representations"][:, self._layer_num, :]
+        layer = self._pretrained_model(inputs, training)["layer_representations"][:, self._layer_num-1, :]
         logits = self._classification(layer)
         # TODO(students): end
         return {"logits": logits}
