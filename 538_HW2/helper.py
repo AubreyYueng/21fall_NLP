@@ -48,7 +48,7 @@ def train():
         os.system(f'{cmd} 2>&1 | tee -a {exc_output}')
 
 
-def probing():
+def probing_sentiment():
     func_name = inspect.currentframe().f_code.co_name
     ts = f_ts()
     exc_output = f'{p_output}/{func_name}_{ts}'
@@ -64,6 +64,49 @@ def probing():
     for cmd in cmd_list:
         os.system(f'echo "======== executing: {cmd} ========" >> {exc_output}')
         os.system(f'{cmd} 2>&1 | tee -a {exc_output}')
+
+
+def probing_bigram():
+    func_name = inspect.currentframe().f_code.co_name
+    ts = f_ts()
+    exc_output = f'{p_output}/{func_name}_{ts}'
+
+    cmd_list = ['python train.py probing data/bigram_order_train.jsonl data/bigram_order_dev.jsonl --base-model-dir serialization_dirs/main_dan_5k_with_emb --layer-num 4 --num-epochs 8 --suffix-name _bigram_order_dan_with_emb_on_5k_at_layer_4',
+                'python train.py probing data/bigram_order_train.jsonl data/bigram_order_dev.jsonl --base-model-dir serialization_dirs/main_gru_5k_with_emb --layer-num 4 --num-epochs 4 --suffix-name _bigram_order_gru_with_emb_on_5k_at_layer_4']
+    for cmd in cmd_list:
+        os.system(f'echo "======== executing: {cmd} ========" >> {exc_output}')
+        os.system(f'{cmd} 2>&1 | tee -a {exc_output}')
+
+
+def predict_sentiment():
+    func_name = inspect.currentframe().f_code.co_name
+    ts = f_ts()
+    exc_output = f'{p_output}/{func_name}_{ts}'
+
+    cmd_list = ['python predict.py serialization_dirs/probing_sentiment_dan_with_emb_on_5k_at_layer_1 data/imdb_sentiment_test.jsonl --predictions-file serialization_dirs/probing_sentiment_dan_with_emb_on_5k_at_layer_1/predictions_imdb_sentiment_5k_test.txt',
+                'python predict.py serialization_dirs/probing_sentiment_dan_with_emb_on_5k_at_layer_2 data/imdb_sentiment_test.jsonl --predictions-file serialization_dirs/probing_sentiment_dan_with_emb_on_5k_at_layer_2/predictions_imdb_sentiment_5k_test.txt',
+                'python predict.py serialization_dirs/probing_sentiment_dan_with_emb_on_5k_at_layer_3 data/imdb_sentiment_test.jsonl --predictions-file serialization_dirs/probing_sentiment_dan_with_emb_on_5k_at_layer_3/predictions_imdb_sentiment_5k_test.txt',
+                'python predict.py serialization_dirs/probing_sentiment_dan_with_emb_on_5k_at_layer_4 data/imdb_sentiment_test.jsonl --predictions-file serialization_dirs/probing_sentiment_dan_with_emb_on_5k_at_layer_4/predictions_imdb_sentiment_5k_test.txt',
+                'python predict.py serialization_dirs/probing_sentiment_gru_with_emb_on_5k_at_layer_1 data/imdb_sentiment_test.jsonl --predictions-file serialization_dirs/probing_sentiment_gru_with_emb_on_5k_at_layer_1/predictions_imdb_sentiment_5k_test.txt',
+                'python predict.py serialization_dirs/probing_sentiment_gru_with_emb_on_5k_at_layer_2 data/imdb_sentiment_test.jsonl --predictions-file serialization_dirs/probing_sentiment_gru_with_emb_on_5k_at_layer_2/predictions_imdb_sentiment_5k_test.txt',
+                'python predict.py serialization_dirs/probing_sentiment_gru_with_emb_on_5k_at_layer_3 data/imdb_sentiment_test.jsonl --predictions-file serialization_dirs/probing_sentiment_gru_with_emb_on_5k_at_layer_3/predictions_imdb_sentiment_5k_test.txt',
+                'python predict.py serialization_dirs/probing_sentiment_gru_with_emb_on_5k_at_layer_4 data/imdb_sentiment_test.jsonl --predictions-file serialization_dirs/probing_sentiment_gru_with_emb_on_5k_at_layer_4/predictions_imdb_sentiment_5k_test.txt']
+    for cmd in cmd_list:
+        os.system(f'echo "======== executing: {cmd} ========" >> {exc_output}')
+        os.system(f'{cmd} 2>&1 | tee -a {exc_output}')
+
+
+def predict_bigram():
+    func_name = inspect.currentframe().f_code.co_name
+    ts = f_ts()
+    exc_output = f'{p_output}/{func_name}_{ts}'
+
+    cmd_list = ['python predict.py serialization_dirs/probing_bigram_order_dan_with_emb_on_5k_at_layer_4 data/bigram_order_test.jsonl --predictions-file serialization_dirs/probing_bigram_order_dan_with_emb_on_5k_at_layer_4/predictions_bigram_order_test.txt',
+                'python predict.py serialization_dirs/probing_bigram_order_gru_with_emb_on_5k_at_layer_4 data/bigram_order_test.jsonl --predictions-file serialization_dirs/probing_bigram_order_gru_with_emb_on_5k_at_layer_4/predictions_bigram_order_test.txt']
+    for cmd in cmd_list:
+        os.system(f'echo "======== executing: {cmd} ========" >> {exc_output}')
+        os.system(f'{cmd} 2>&1 | tee -a {exc_output}')
+
 
 # --------------------------------------------- 1. Learning Curves ----------------------------------------------------
 # ---------------------------- (a) Performance with respect to training dataset size ----------------------------
@@ -114,30 +157,58 @@ def record_failure_cases():
             for task in [imdb, bigram]:
                 model = f_model(dan_or_gru, data_size)
                 test_data = p_test[task]
-                prediction_data_path = f'{p_predict}/{model}_{test_data}.txt'
-                gold_data_path = f'data/{test_data}.jsonl'
+                process_failure(model, test_data)
 
-                error_file = f'{prediction_data_path}_error'
-                os.system(f'rm -f {error_file}')
 
-                with open(gold_data_path) as file:
-                    gold_labels = [int(json.loads(line.strip())["label"])
-                                   for line in file.readlines() if line.strip()]
+def error_analysis_for_50k():
+    func_name = inspect.currentframe().f_code.co_name
+    ts = f_ts()
+    exc_output = f'{p_output}/{func_name}_{ts}'
 
-                with open(gold_data_path) as file:
-                    all_texts = [str(json.loads(line.strip())["text"]) for line in file.readlines() if line.strip()]
+    model = 'main_dan_5k_with_emb_for_50k'
+    for task in [imdb, bigram]:
+        test_data = p_test[task]
+        predict_file = f'{p_predict}/{model}_{test_data}'
 
-                with open(prediction_data_path) as file:
-                    predicted_labels = [int(line.strip())
-                                        for line in file.readlines() if line.strip()]
+        os.system(f'echo "======== Making prediction using {model} on {test_data} ========" >> {exc_output}')
+        os.system(f"python3 predict.py serialization_dirs/{model} \
+                                                data/{test_data}.jsonl \
+                                                --predictions-file {predict_file}.txt \
+                                                2>&1 | tee -a {exc_output}")
 
-                f = open(error_file, "w")
-                for i, result in enumerate(gold_labels):
-                    gold = gold_labels[i]
-                    predict = predicted_labels[i]
-                    if gold != predict:
-                        f.write(f'{all_texts[i]}\n')
-                f.close()
+        os.system(f'echo "======== Evaluating prediction results: {predict_file} ========" >> {exc_output}')
+        os.system(f"python3 evaluate.py data/{test_data}.jsonl \
+                                                {predict_file}.txt \
+                                                2>&1 | tee -a {exc_output}")
+        process_failure(model, test_data)
+
+
+def process_failure(model, test_data):
+    prediction_data_path = f'{p_predict}/{model}_{test_data}.txt'
+    gold_data_path = f'data/{test_data}.jsonl'
+
+    error_file = f'{prediction_data_path}_error'
+    os.system(f'rm -f {error_file}')
+
+    with open(gold_data_path) as file:
+        gold_labels = [int(json.loads(line.strip())["label"])
+                       for line in file.readlines() if line.strip()]
+
+    with open(gold_data_path) as file:
+        all_texts = [str(json.loads(line.strip())["text"]) for line in file.readlines() if line.strip()]
+
+    with open(prediction_data_path) as file:
+        predicted_labels = [int(line.strip())
+                            for line in file.readlines() if line.strip()]
+
+    f = open(error_file, "w")
+    for i, result in enumerate(gold_labels):
+        gold = gold_labels[i]
+        predict = predicted_labels[i]
+        if gold != predict:
+            f.write(f'{all_texts[i]}\n')
+    f.close()
+
 
 
 # ---------------------------------- 3. Probing Performances on Sentiment Task ----------------------------------
@@ -160,8 +231,11 @@ if __name__ == '__main__':
     sys.path.extend(['/Users/evenyoung/Desktop/2021_NLP/hw/538_HW2'])
     os.system("pwd")
 
-    train()
-    # probing()
+    # train()
+    # probing_sentiment()
+    # probing_bigram()
+    # predict_sentiment()
+    # predict_bigram()
 
     # run plot_performance_against_data_size.py
 
@@ -170,6 +244,7 @@ if __name__ == '__main__':
 
     # error_analysis()
     # record_failure_cases()
+    # error_analysis_for_50k()
 
     # run plot_probing_performances_on_sentiment_task.py
     # run plot_probing_performances_on_bigram_order_task.py
