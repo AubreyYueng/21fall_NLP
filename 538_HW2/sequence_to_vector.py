@@ -105,7 +105,7 @@ class DanSequenceToVector(SequenceToVector):
         for i in range(batch_size):
             cur_batch = vector_sequence[i]
             with torch.no_grad():
-                mask = torch.ones(len(cur_batch))
+                mask = torch.ones(len(cur_batch)).to(self._device)
                 if training:        # dropout in training helps prevent overfitting
                     mask = torch.bernoulli(mask * (1 - self._dropout))
                     # print(f'number of samples chosen by bernoulli: {mask.sum()}')
@@ -163,7 +163,7 @@ class GruSequenceToVector(SequenceToVector):
              sequence_mask: torch.Tensor,
              training=False) -> torch.Tensor:
         # TODO(students): start
-        seq_lengths = sequence_mask.sum(dim=1)
+        seq_lengths = sequence_mask.sum(dim=1).to("cpu")    # lengths has to be a 1D CPU int64 tensor
         packed_seq_batch = nn.utils.rnn.pack_padded_sequence(vector_sequence, lengths=seq_lengths, batch_first=True,
                                                              enforce_sorted=False)
         # experiment with xavier_normal weights
