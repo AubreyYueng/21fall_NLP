@@ -1,1 +1,4 @@
 data/glove.6B.50d.txt
+output
+predictions
+serialization_dirs
