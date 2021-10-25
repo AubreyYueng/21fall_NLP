@@ -124,7 +124,33 @@ def get_configuration_features(configuration: Configuration,
     =================================================================
     """
     # TODO(Students) Start
+    word_features = []
+    # The top 3 words on the stack and buffers1, s2, s3, b1, b2, b3
+    s123 = [configuration.get_stack(i) for i in range(3)]
+    b123 = [configuration.get_buffer(i) for i in range(3)]
+    word_features.extend(s123)
+    word_features.extend(b123)
+    # The first and second leftmost / rightmost children of the top two words on the stack:
+    # lc1(si), rc1(si), lc2(si), rc2(si), i = 1, 2
+    lc1 = [configuration.get_left_child(k, 1) for k in s123[:2]]
+    rc1 = [configuration.get_right_child(k, 1) for k in s123[:2]]
+    word_features.extend(lc1)
+    word_features.extend(rc1)
+    word_features.extend([configuration.get_left_child(k, 2) for k in s123[:2]])
+    word_features.extend([configuration.get_right_child(k, 2) for k in s123[:2]])
+    # The leftmost of leftmost / rightmost of rightmost children of the top two words on the stack:
+    # lc1(lc1(si)), rc1(rc1(si)), i = 1, 2
+    word_features.extend([configuration.get_left_child(lc1si, 1) for lc1si in lc1])
+    word_features.extend([configuration.get_right_child(rc1si, 1) for rc1si in rc1])
+    # corresponding 18 POS tags
+    pos_features = [configuration.get_pos(x) for x in word_features]
+    # corresponding 12 arc labels of words excluding those 6 words on the stack/buffer
+    label_features = [configuration.get_label(x) for x in word_features]
 
+    features = []
+    features.extend(word_features)
+    features.extend(pos_features)
+    features.extend(label_features)
     # TODO(Students) End
 
     assert len(features) == 48
