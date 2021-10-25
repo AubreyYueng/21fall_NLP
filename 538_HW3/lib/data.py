@@ -126,26 +126,29 @@ def get_configuration_features(configuration: Configuration,
     # TODO(Students) Start
     word_features = []
     # The top 3 words on the stack and buffers1, s2, s3, b1, b2, b3
-    s123 = [configuration.get_stack(i) for i in range(3)]
-    b123 = [configuration.get_buffer(i) for i in range(3)]
-    word_features.extend(s123)
-    word_features.extend(b123)
+    s1s2s3 = [configuration.get_stack(i) for i in range(3)]
+    b1b2b3 = [configuration.get_buffer(i) for i in range(3)]
+    word_features.extend(s1s2s3)
+    word_features.extend(b1b2b3)
     # The first and second leftmost / rightmost children of the top two words on the stack:
     # lc1(si), rc1(si), lc2(si), rc2(si), i = 1, 2
-    lc1 = [configuration.get_left_child(k, 1) for k in s123[:2]]
-    rc1 = [configuration.get_right_child(k, 1) for k in s123[:2]]
-    word_features.extend(lc1)
-    word_features.extend(rc1)
-    word_features.extend([configuration.get_left_child(k, 2) for k in s123[:2]])
-    word_features.extend([configuration.get_right_child(k, 2) for k in s123[:2]])
+    chd_features = []
+    s1s2 = s1s2s3[:2]
+    lc1 = [configuration.get_left_child(k, 1) for k in s1s2]
+    rc1 = [configuration.get_right_child(k, 1) for k in s1s2]
+    chd_features.extend(lc1)
+    chd_features.extend(rc1)
+    chd_features.extend([configuration.get_left_child(k, 2) for k in s1s2])
+    chd_features.extend([configuration.get_right_child(k, 2) for k in s1s2])
     # The leftmost of leftmost / rightmost of rightmost children of the top two words on the stack:
     # lc1(lc1(si)), rc1(rc1(si)), i = 1, 2
-    word_features.extend([configuration.get_left_child(lc1si, 1) for lc1si in lc1])
-    word_features.extend([configuration.get_right_child(rc1si, 1) for rc1si in rc1])
+    chd_features.extend([configuration.get_left_child(lc1si, 1) for lc1si in lc1])
+    chd_features.extend([configuration.get_right_child(rc1si, 1) for rc1si in rc1])
+    word_features.extend(chd_features)
     # corresponding 18 POS tags
-    pos_features = [configuration.get_pos(x) for x in word_features]
+    pos_features = [vocabulary.get_pos_id(configuration.get_pos(x)) for x in word_features]
     # corresponding 12 arc labels of words excluding those 6 words on the stack/buffer
-    label_features = [configuration.get_label(x) for x in word_features]
+    label_features = [vocabulary.get_label_id(configuration.get_label(x)) for x in chd_features]
 
     features = []
     features.extend(word_features)
