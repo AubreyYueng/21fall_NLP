@@ -103,7 +103,23 @@ class ParsingSystem:
         =================================================================
         """
         # TODO(Students) Start
+        if transition.startswith("S"):
+            configuration.shift()
+        else:
+            label = transition[2:-1]
+            if transition.startswith("L"):
+                h = configuration.get_stack(1)
+                dep = configuration.get_stack(0)
+            else:
+                h = configuration.get_stack(0)
+                dep = configuration.get_stack(1)
+            configuration.add_arc(h, dep, label)
+            configuration.tree.add(h, label)
 
+            if transition.startswith("L"):
+                configuration.remove_second_top_stack()
+            else:
+                configuration.remove_top_stack()
         # TODO(Students) End
         return configuration
 
