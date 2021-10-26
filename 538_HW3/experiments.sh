@@ -29,7 +29,7 @@ python train.py data/train.conll \
                 --use-cached-data \
                 --experiment-name wo_glove
 
-# Without tunable embeddings
+# With tunable embeddings
 python train.py data/train.conll \
                 data/dev.conll \
                 --pretrained-embedding-file data/glove.6B.50d.txt \
