@@ -31,7 +31,7 @@ class CubicActivation(nn.Module):
         Returns tensor after applying the activation
         """
         # TODO(Students) Start
-
+        return torch.pow(vector, 3)
         # TODO(Students) End
 
 
@@ -68,9 +68,9 @@ class DependencyParser(nn.Module):
             Number of tokens (words/pos) to be used for features
             for this configuration.
         hidden_dim : ``int``
-            Hidden dimension of feedforward network
         num_transitions : ``int``
             Number of transitions to choose from.
+            Hidden dimension of feedforward network
         regularization_lambda : ``float``
             Regularization loss fraction lambda as given in paper.
         trainable_embeddings : `bool`
@@ -90,7 +90,23 @@ class DependencyParser(nn.Module):
 
         # Trainable Variables
         # TODO(Students) Start
+        self._device = device
+        self._trainable = trainable_embeddings
 
+        def init_embedding(num_embeddings):
+            emb = nn.Embedding(num_embeddings, embedding_dim)
+            emb.weight.data.normal_(mean=0, std=1 / math.sqrt(embedding_dim))
+            emb.weight.requires_grad = trainable_embeddings
+            return emb
+
+        # embedding + linear transformation
+        self._word_embedding = nn.Sequential(init_embedding(vocab_size), nn.Linear(18, hidden_dim)).to(device)
+        self._pos_embedding = nn.Sequential(init_embedding(num_tokens), nn.Linear(18, hidden_dim)).to(device)
+        self._label_embedding = nn.Sequential(init_embedding(num_transitions), nn.Linear(12, hidden_dim)).to(device)
+        # output
+        self._output = nn.Sequential(
+            nn.Linear(hidden_dim, num_transitions, bias=False),
+            nn.Sigmoid()).to(device)
         # TODO(Students) End
 
     def forward(self,
@@ -123,7 +139,14 @@ class DependencyParser(nn.Module):
 
         """
         # TODO(Students) Start
-
+        logits_list = []
+        for row in inputs:
+            word_emb = self._word_embedding(row[:, :18])
+            pos_emb = self._pos_embedding(row[:, 18:36])
+            label_emb = self._label_embedding(row[:, 36:])
+            hidden = self._activation(word_emb + pos_emb + label_emb)
+            logits_list.append(self._output(hidden))
+        logits = torch.stack(logits_list)
         # TODO(Students) End
         output_dict = {"logits": logits}
 
@@ -147,6 +170,17 @@ class DependencyParser(nn.Module):
 
         """
         # TODO(Students) Start
+        l2_reg = torch.tensor(0.)
+        if labels is not None:
+            for cur_label in labels:
+                l2_reg += torch.norm(cur_label, p=2) / 2
+            l2_reg *= self._regularization_lambda
 
+        entropy_losses = []
+        for cur_logit in logits:
+            entropy_losses.append(-torch.log(cur_logit).sum())
+        cross_entropy_loss = sum(entropy_losses) / len(entropy_losses)
+
+        loss = cross_entropy_loss + l2_reg
         # TODO(Students) End
         return loss
