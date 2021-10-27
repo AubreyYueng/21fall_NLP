@@ -154,6 +154,7 @@ def get_configuration_features(configuration: Configuration,
     features.extend(word_features)
     features.extend(pos_features)
     features.extend(label_features)
+    # print(features[:5])
     # TODO(Students) End
 
     assert len(features) == 48
