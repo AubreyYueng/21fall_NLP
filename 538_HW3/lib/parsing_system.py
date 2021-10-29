@@ -107,10 +107,10 @@ class ParsingSystem:
         if transition.startswith("S"):  # move one word from buffer to stack
             configuration.shift()
         elif transition.startswith("L"):    # top word on stack is head of second word
-            configuration.tree.set(configuration.get_stack(1), configuration.get_stack(0), label)
+            configuration.add_arc(configuration.get_stack(0), configuration.get_stack(1), label)
             configuration.remove_second_top_stack()
         else:   # second word on stack is head of top word
-            configuration.tree.set(configuration.get_stack(0), configuration.get_stack(1), label)
+            configuration.add_arc(configuration.get_stack(1), configuration.get_stack(0), label)
             configuration.remove_top_stack()
         # TODO(Students) End
         return configuration
