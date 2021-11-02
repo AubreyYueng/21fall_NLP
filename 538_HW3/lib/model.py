@@ -68,9 +68,9 @@ class DependencyParser(nn.Module):
             Number of tokens (words/pos) to be used for features
             for this configuration.
         hidden_dim : ``int``
+            Hidden dimension of feedforward network
         num_transitions : ``int``
             Number of transitions to choose from.
-            Hidden dimension of feedforward network
         regularization_lambda : ``float``
             Regularization loss fraction lambda as given in paper.
         trainable_embeddings : `bool`
@@ -78,6 +78,7 @@ class DependencyParser(nn.Module):
         """
         super(DependencyParser, self).__init__()
         self._regularization_lambda = regularization_lambda
+        self._device = device
 
         if activation_name == "cubic":
             self._activation = CubicActivation()
@@ -90,23 +91,17 @@ class DependencyParser(nn.Module):
 
         # Trainable Variables
         # TODO(Students) Start
-        self._device = device
-        self._trainable = trainable_embeddings
-
-        def init_embedding(num_embeddings):
-            emb = nn.Embedding(num_embeddings, embedding_dim)
-            emb.weight.data.normal_(mean=0, std=1 / math.sqrt(embedding_dim))
-            emb.weight.requires_grad = trainable_embeddings
-            return emb
-
-        # embedding + linear transformation
-        self._word_embedding = nn.Sequential(init_embedding(vocab_size), nn.Linear(18, hidden_dim)).to(device)
-        self._pos_embedding = nn.Sequential(init_embedding(num_tokens), nn.Linear(18, hidden_dim)).to(device)
-        self._label_embedding = nn.Sequential(init_embedding(num_transitions), nn.Linear(12, hidden_dim)).to(device)
-        # output
-        self._output = nn.Sequential(
-            nn.Linear(hidden_dim, num_transitions, bias=False),
-            nn.Sigmoid()).to(device)
+        print(f'{embedding_dim}, {vocab_size}, {num_tokens}, {hidden_dim}, {num_transitions}, {regularization_lambda}, '
+              f'{trainable_embeddings}')
+        # use random initialization within (−0.01, 0.01) for Et and El
+        # self.embeddings could be override if 'pretrained-embedding-file'
+        numpy_weights = truncated_normal(vocab_size * embedding_dim, 0.005).reshape((vocab_size, embedding_dim))
+        torch_weights = torch.tensor(numpy_weights, dtype=torch.float32).to(device)
+        self.embeddings = nn.Embedding.from_pretrained(torch_weights, freeze=trainable_embeddings).to(device)
+        # W1
+        self._W1 = nn.Linear(num_tokens * embedding_dim, hidden_dim).to(device)
+        # W2
+        self._W2 = nn.Linear(hidden_dim, num_transitions, bias=False).to(device)
         # TODO(Students) End
 
     def forward(self,
@@ -140,12 +135,12 @@ class DependencyParser(nn.Module):
         """
         # TODO(Students) Start
         logits_list = []
-        for row in inputs:
-            word_emb = self._word_embedding(row[:, :18])
-            pos_emb = self._pos_embedding(row[:, 18:36])
-            label_emb = self._label_embedding(row[:, 36:])
-            hidden = self._activation(word_emb + pos_emb + label_emb)
-            logits_list.append(self._output(hidden))
+        input_embeddings = self.embeddings(inputs)
+        for emb in input_embeddings:
+            linear1 = self._W1(emb.reshape((-1,)))
+            hidden = self._activation(linear1)
+            linear2 = self._W2(hidden)
+            logits_list.append(linear2)
         logits = torch.stack(logits_list)
         # TODO(Students) End
         output_dict = {"logits": logits}
@@ -170,17 +165,26 @@ class DependencyParser(nn.Module):
 
         """
         # TODO(Students) Start
+        # l2-regularization
         l2_reg = torch.tensor(0.)
-        if labels is not None:
-            for cur_label in labels:
-                l2_reg += torch.norm(cur_label, p=2) / 2
-            l2_reg *= self._regularization_lambda
-
+        for name, param in self.named_parameters():
+            # if param.requires_grad and name in ['embeddings.weight', '_W1.weight', '_W1.bias', '_W2.weight']:
+            #     l2_reg += param.norm(2) / 2
+            l2_reg += param.norm(2) / 2
+        l2_reg *= self._regularization_lambda
+        # cross entropy loss
         entropy_losses = []
-        for cur_logit in logits:
-            entropy_losses.append(-torch.log(cur_logit).sum())
-        cross_entropy_loss = sum(entropy_losses) / len(entropy_losses)
+        LogSoftmax = nn.LogSoftmax()
+        for idx, logit in enumerate(logits):
+            label = labels[idx]
+            mask = label != -1
+            feasible_logit = logit[mask]
+            feasible_label = label[mask]
+            entropy_losses.append(torch.sum(-LogSoftmax(feasible_logit) * feasible_label))
+        # cross_entropy_loss = sum(entropy_losses) / len(entropy_losses)
+        cross_entropy_loss = sum(entropy_losses)
 
+        # The final training objective is to minimize the cross-entropy loss, plus a l2-regularization term.
         loss = cross_entropy_loss + l2_reg
         # TODO(Students) End
         return loss

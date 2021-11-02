@@ -149,6 +149,8 @@ def get_configuration_features(configuration: Configuration,
     pos_features = [vocabulary.get_pos_id(configuration.get_pos(x)) for x in word_features]
     # corresponding 12 arc labels of words excluding those 6 words on the stack/buffer
     label_features = [vocabulary.get_label_id(configuration.get_label(x)) for x in chd_features]
+    # convert word to indexes
+    word_features = [vocabulary.get_word_id(configuration.get_word(x)) for x in word_features]
 
     features = []
     features.extend(word_features)
