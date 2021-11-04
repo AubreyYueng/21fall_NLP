@@ -91,8 +91,6 @@ class DependencyParser(nn.Module):
 
         # Trainable Variables
         # TODO(Students) Start
-        print(f'{embedding_dim}, {vocab_size}, {num_tokens}, {hidden_dim}, {num_transitions}, {regularization_lambda}, '
-              f'{trainable_embeddings}')
         # use random initialization within (−0.01, 0.01) for Et and El
         # self.embeddings could be override if 'pretrained-embedding-file'
         numpy_weights = truncated_normal(vocab_size * embedding_dim, 0.005).reshape((vocab_size, embedding_dim))
