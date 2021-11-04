@@ -91,7 +91,7 @@ class DependencyParser(nn.Module):
 
         # Trainable Variables
         # TODO(Students) Start
-        # use random initialization within (−0.01, 0.01) for Et and El
+        # use random initialization within (−0.01, 0.01) for Ew, Et and El
         # self.embeddings could be override if 'pretrained-embedding-file'
         numpy_weights = truncated_normal(vocab_size * embedding_dim, 0.005).reshape((vocab_size, embedding_dim))
         torch_weights = torch.tensor(numpy_weights, dtype=torch.float32).to(device)
